@@ -157,7 +157,3 @@ Alerting: Set up email or Slack notifications for when certain thresholds (like 
 Queueing: Implement a message queue (like Kafka or RabbitMQ) for handling logs at a higher scale.
 
 Authentication: Add authentication to the backend to protect log data.
-
-<img width="1809" height="1006" alt="1" src="https://github.com/user-attachments/assets/5d48321e-6e0c-4909-ad8d-5946ac9159f3" />
-
-<img width="1809" height="1006" alt="2" src="https://github.com/user-attachments/assets/6d2544eb-9a97-4420-888e-0463c5b395ca" />
