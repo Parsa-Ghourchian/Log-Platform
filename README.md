@@ -1,159 +1,188 @@
-# Log-Platform
-In this project, we have created a complete log management and monitoring system using Docker, Elasticsearch, Kibana, Filebeat, and Log Generator. Here's a breakdown of what we built and how it all fits together:
+# Log Platform
 
-🟩 1. Backend for Receiving Logs (FastAPI)
+A lightweight log ingestion and monitoring platform built with FastAPI, Elasticsearch, Kibana, and Docker. This project demonstrates how to collect application logs, store them in Elasticsearch, and visualize them in Kibana for real-time troubleshooting and analysis.
 
-We created a simple FastAPI backend that:
+## Overview
 
-Accepts POST requests with log data (JSON format).
+Log Platform provides a simple but practical logging pipeline for development and demo environments:
 
-Example log structure:
+- The backend accepts log events through a REST API.
+- Logs are indexed in Elasticsearch for fast search and filtering.
+- Kibana offers an interactive dashboard for exploring log data.
+- An optional Python-based generator can simulate log traffic.
 
-{ "service": "auth-service", "level": "ERROR", "message": "Login failed", "meta": { "user_id": 123, "ip": "1.1.1.1" } }
+## Architecture
 
-Sends logs directly to Elasticsearch for storage and indexing.
+```text
+Application / Services -> FastAPI Backend -> Elasticsearch -> Kibana
+                           ^
+                           |
+                    Sample log generator
+```
 
-This eliminates the need for additional log parsing or processing at this stage and provides a straightforward way of collecting logs from various services.
+### Components
 
-🟩 2. Elasticsearch Setup
+- Backend: FastAPI service that receives logs and stores them in Elasticsearch.
+- Elasticsearch: Search and analytics engine used for log storage and querying.
+- Kibana: Visualization layer for dashboards and log exploration.
+- Log Generator: Optional Python service that sends mock logs to the backend.
 
-Elasticsearch was set up as the main storage and search engine for logs:
+## Tech Stack
 
-Stores logs as JSON documents.
+- FastAPI
+- Elasticsearch 8.x
+- Kibana 8.x
+- Docker Compose
+- Python 3.11
 
-Provides full-text search capabilities for efficient querying and log analysis.
+## Project Structure
 
-Easily scalable for large datasets and real-time log querying.
+```text
+.
+├── backend/
+│   ├── app/
+│   │   └── main.py
+│   ├── Dockerfile
+│   └── requirements.txt
+├── log-generator/
+│   ├── main.py
+│   ├── Dockerfile
+│   └── requirements.txt
+├── docker-compose.yml
+└── README.md
+```
 
-🟩 3. Kibana Setup (Analytics Dashboard)
+## Prerequisites
 
-Kibana was used as the front-end dashboard and visualization tool:
+Make sure the following are installed on your machine:
 
-Displays logs from Elasticsearch in a user-friendly, interactive interface.
+- Docker
+- Docker Compose
+- Python 3.11 (only if you want to run the log generator locally)
 
-Allows users to explore and search through logs in real-time.
+## Quick Start
 
-Provides capabilities for creating dashboards, visualizations, and setting up alerts (if enabled later).
+1. Clone the repository:
 
-🟩 4. Log Generator (Python Service)
+```bash
+git clone https://github.com/your-username/Log-Platform.git
+cd Log-Platform
+```
 
-We added a log generator service that simulates real-world log data. This component:
+2. Start the stack:
 
-Generates log data at regular intervals (every 3 seconds by default).
+```bash
+docker compose up --build -d
+```
 
-Uses random log levels (INFO, WARNING, ERROR), random services, and metadata (like user_id, IP, and device type).
+3. Wait a few moments for Elasticsearch and Kibana to initialize.
 
-Sends logs to the backend via HTTP POST requests for processing.
+4. Open the services:
 
-This ensures that we always have live data to visualize and query in Kibana.
+- Backend API docs: http://localhost:8000/docs
+- Kibana: http://localhost:5601
+- Elasticsearch: http://localhost:9200
 
-🟩 5. Docker Compose for Simplified Management
+## Sending Your First Log
 
-We used Docker Compose to manage all services in a single configuration:
+You can send a sample log using the API:
 
-FastAPI Backend for receiving logs.
+```bash
+curl -X POST "http://localhost:8000/logs" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "service": "auth-service",
+    "level": "ERROR",
+    "message": "Login failed for user",
+    "meta": {
+      "user_id": 123,
+      "ip": "1.1.1.1"
+    }
+  }'
+```
 
-Elasticsearch for storing logs.
+You can also search logs:
 
-Kibana for visualizing and analyzing logs.
+```bash
+curl "http://localhost:8000/logs/search?query=login&limit=10"
+```
 
-Log Generator for generating mock logs.
+## Kibana Setup
 
-This allowed us to spin up all services with a single command:
+After the services are running:
 
-docker-compose up -d
+1. Open Kibana at http://localhost:5601.
+2. Create an index pattern for the Elasticsearch index.
+3. Use the default index name: `logs-0001`.
+4. Set the time field to `timestamp`.
 
-🟩 6. Kibana Dashboard for Log Visualization
+You can then build visualizations such as:
 
-We built a comprehensive Kibana dashboard for log analysis:
+- Logs by level
+- Logs by service
+- Error trend over time
+- Recent error events
 
-Logs by Level: Visualize log counts by severity (INFO, WARNING, ERROR).
+## Optional: Run the Log Generator
 
-Logs by Service: Track logs per service (auth-service, payment-service, etc.).
+The repository includes a Python-based generator that simulates logs. Run it locally with:
 
-Log Timeline: See a time-based distribution of log events.
+```bash
+BACKEND_URL=http://localhost:8000/logs python log-generator/main.py
+```
 
-KPIs: Track the total count of logs, ERROR logs, and more.
+This will continuously send mock logs to the backend.
 
-Donut Charts: Display the distribution of different log levels in a donut chart.
+## API Endpoints
 
-Logs Table: Show a detailed table with timestamp, service, level, message, and metadata.
+### Health Check
 
-This dashboard allows users to explore logs in real-time, filter data by specific criteria, and monitor the health of the system.
+```http
+GET /health
+```
 
-🟩 7. Real-Time Logging Pipeline
+### Ingest a Log
 
-The log generator continually generates mock logs, which are sent to the backend and then to Elasticsearch for storage. Kibana visualizes these logs in real-time, allowing us to monitor:
+```http
+POST /logs
+```
 
-Service health
+### Search Logs
 
-Errors and exceptions
+```http
+GET /logs/search?query=login&limit=20
+```
 
-User activities
+## Environment Variables
 
-This real-time log pipeline is essential for understanding system performance and troubleshooting issues.
+The backend uses the following environment variables:
 
-🟩 8. Replaced Logstash (Optional)
+- `ELASTIC_HOST`: Elasticsearch host (default: `elasticsearch`)
+- `ELASTIC_PORT`: Elasticsearch port (default: `9200`)
+- `ELASTIC_SCHEME`: Elasticsearch scheme (default: `http`)
+- `LOG_INDEX`: Elasticsearch index name (default: `logs-0001`)
 
-Initially, Logstash was used to process and forward logs to Elasticsearch. However, if you prefer to simplify the architecture, the project was reconfigured to send logs directly from the backend to Elasticsearch.
+The generator uses:
 
-By removing Logstash, the architecture is now simpler and more direct, with the backend directly interacting with Elasticsearch.
-🔥 What Does This Project Help With?
+- `BACKEND_URL`: Target log ingestion endpoint (default: `http://backend:8000/logs`)
+- `INTERVAL`: Delay between generated logs in seconds (default: `5`)
 
-    Real-Time Monitoring and Debugging
+## Troubleshooting
 
-This system provides a real-time log aggregation and analysis platform that:
+If something does not start correctly:
 
-Allows you to monitor your services (auth-service, payment-service, etc.).
+```bash
+docker compose ps
+docker compose logs -f backend elasticsearch kibana
+```
 
-Helps detect errors, issues, and performance bottlenecks.
+Common issues:
 
-Provides visibility into system health and user activity.
+- Elasticsearch takes a few moments to become ready.
+- Kibana may show no data until logs are ingested.
+- If the backend cannot connect to Elasticsearch, verify the Docker network and environment variables.
 
-    Faster Debugging
+## License
 
-With logs centralized in Elasticsearch and visualized in Kibana, developers and operators can quickly pinpoint the cause of errors and issues across multiple services.
+This project is intended for learning, experimentation, and demonstration purposes.
 
-    Advanced Log Analysis
-
-Using Kibana, you can:
-
-Perform advanced searches over logs.
-
-Analyze log patterns and trends.
-
-Create complex visualizations like bar charts, line charts, and pie charts to track error rates and log distributions.
-
-    Foundation for Advanced Monitoring
-
-This project sets the foundation for building a fully-featured monitoring system that can be extended with:
-
-Alerting: Notify you when a service is down, or error rates spike.
-
-Distributed Log Management: Add multiple services that send logs to the same central system.
-
-Security Monitoring: Track suspicious user activity or unauthorized access attempts.
-
-Machine Learning: Implement anomaly detection to automatically identify unusual patterns in your logs.
-
-🛠 Technologies Used:
-
-FastAPI: Fast web framework for building the backend.
-
-Elasticsearch: Real-time search and analytics engine for storing logs.
-
-Kibana: Visualization and dashboard tool for log analysis.
-
-Docker Compose: Orchestrating all services (backend, Elasticsearch, Kibana).
-
-Filebeat (Optional): Lightweight log shipper for forwarding logs to Logstash (or Elasticsearch).
-
-Python: Used for the log generator that produces mock log data.
-
-Next Steps (Optional):
-
-Alerting: Set up email or Slack notifications for when certain thresholds (like errors or high latency) are reached.
-
-Queueing: Implement a message queue (like Kafka or RabbitMQ) for handling logs at a higher scale.
-
-Authentication: Add authentication to the backend to protect log data.
